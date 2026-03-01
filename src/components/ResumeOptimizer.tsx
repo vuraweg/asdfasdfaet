@@ -510,12 +510,11 @@ const checkForMissingSections = useCallback((resumeData: ResumeData): string[] =
         
         finalOptimizedResume = {
           ...optimizationResult.optimizedResume,
-          // Ensure user info is populated
-          name: userName || resumeData.name || '',
-          email: userEmail || resumeData.email || '',
-          phone: userPhone || resumeData.phone || '',
-          linkedin: userLinkedin || resumeData.linkedin || '',
-          github: userGithub || resumeData.github || '',
+          name: resumeData.name || userName || '',
+          email: resumeData.email || userEmail || '',
+          phone: resumeData.phone || userPhone || '',
+          linkedin: resumeData.linkedin || userLinkedin || '',
+          github: resumeData.github || userGithub || '',
           targetRole: targetRole || resumeData.targetRole || '',
           origin: 'jd_optimized'
         };
@@ -577,11 +576,11 @@ const checkForMissingSections = useCallback((resumeData: ResumeData): string[] =
         // Fallback: Use parsed resume directly if no JD provided
         finalOptimizedResume = {
           ...resumeData,
-          name: userName || resumeData.name || '',
-          email: userEmail || resumeData.email || '',
-          phone: userPhone || resumeData.phone || '',
-          linkedin: userLinkedin || resumeData.linkedin || '',
-          github: userGithub || resumeData.github || '',
+          name: resumeData.name || userName || '',
+          email: resumeData.email || userEmail || '',
+          phone: resumeData.phone || userPhone || '',
+          linkedin: resumeData.linkedin || userLinkedin || '',
+          github: resumeData.github || userGithub || '',
           targetRole: targetRole || resumeData.targetRole || '',
           origin: 'eden_optimized'
         };

@@ -125,6 +125,25 @@ export const SOFT_SKILLS = [
   'attention to detail', 'work ethic', 'interpersonal skills', 'emotional intelligence'
 ];
 
+export const ALL_HARD_SKILLS: string[] = [
+  ...PROGRAMMING_LANGUAGES,
+  ...FRONTEND_TECHNOLOGIES,
+  ...BACKEND_TECHNOLOGIES,
+  ...DATABASES,
+  ...CLOUD_AND_DEVOPS,
+  ...DATA_SCIENCE_AND_ML,
+  ...TESTING_AND_QA,
+];
+
+export const ALL_TOOL_SKILLS: string[] = [
+  ...TOOLS_AND_PLATFORMS,
+];
+
+export const CONTACT_PROFILE_WORDS = new Set([
+  'github', 'linkedin', 'portfolio', 'email', 'phone', 'website',
+  'twitter', 'medium', 'blog', 'resume', 'cv',
+]);
+
 // Category Skills Map for easy lookup
 export const CATEGORY_SKILLS_MAP: Record<SkillCategoryName, string[]> = {
   [SKILL_CATEGORIES.PROGRAMMING_LANGUAGES]: PROGRAMMING_LANGUAGES,

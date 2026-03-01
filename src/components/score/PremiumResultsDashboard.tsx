@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { RotateCcw, ArrowLeft, FileText, Info, Wand2 } from 'lucide-react';
+import { RotateCcw, ArrowLeft, FileText, Info, Wand2, AlertCircle, User, Phone, Linkedin, Github } from 'lucide-react';
 import type { PremiumScoreResult } from '../../services/premiumScoreEngine';
 import { ScoreOverviewCard } from './ScoreOverviewCard';
 import { CategoryBreakdown } from './CategoryBreakdown';
@@ -23,6 +23,30 @@ export const PremiumResultsDashboard: React.FC<PremiumResultsDashboardProps> = (
   onOptimizeResume,
 }) => {
   const showProjects = result.userType !== 'experienced' || result.projectScores.length > 0;
+
+  const missingContactFields = useMemo(() => {
+    const fields: { label: string; icon: React.ReactNode; required: boolean }[] = [];
+    const contactFlag = result.redFlags.find(f => f.id === 'missing_contact');
+    if (contactFlag) {
+      const desc = contactFlag.description.toLowerCase();
+      if (desc.includes('email')) {
+        fields.push({ label: 'Email address', icon: <User className="w-4 h-4" />, required: true });
+      }
+      if (desc.includes('phone')) {
+        fields.push({ label: 'Phone number', icon: <Phone className="w-4 h-4" />, required: true });
+      }
+    }
+    if (!result.onlinePresence.linkedin) {
+      fields.push({ label: 'LinkedIn URL', icon: <Linkedin className="w-4 h-4" />, required: true });
+    }
+    if (!result.onlinePresence.github) {
+      fields.push({ label: 'GitHub URL', icon: <Github className="w-4 h-4" />, required: true });
+    }
+    if (!result.onlinePresence.portfolio) {
+      fields.push({ label: 'Portfolio website', icon: <FileText className="w-4 h-4" />, required: false });
+    }
+    return fields;
+  }, [result]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 pb-10">
@@ -47,6 +71,43 @@ export const PremiumResultsDashboard: React.FC<PremiumResultsDashboardProps> = (
           Back
         </button>
       </motion.div>
+
+      {missingContactFields.filter(f => f.required).length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="rounded-xl border p-4"
+          style={{ background: 'rgba(245,158,11,0.06)', borderColor: 'rgba(245,158,11,0.25)' }}
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-semibold text-amber-300">Missing Contact Information</h4>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Your resume is missing the following details. Add them to your resume's header/contact section to improve your score.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {missingContactFields.map((field, i) => (
+                  <span
+                    key={i}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${
+                      field.required
+                        ? 'bg-amber-500/10 border-amber-500/25 text-amber-300'
+                        : 'bg-slate-500/10 border-slate-500/25 text-slate-400'
+                    }`}
+                  >
+                    {field.icon}
+                    {field.label}
+                    {field.required && <span className="text-[10px] opacity-60">(required)</span>}
+                    {!field.required && <span className="text-[10px] opacity-60">(optional)</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div
         className="flex items-start gap-2.5 p-3 rounded-xl border text-sm"

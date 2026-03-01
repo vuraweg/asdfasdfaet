@@ -1,4 +1,10 @@
 import { ResumeData } from '../types/resume';
+import {
+  ALL_HARD_SKILLS,
+  ALL_TOOL_SKILLS,
+  SOFT_SKILLS as TAXONOMY_SOFT_SKILLS,
+  CONTACT_PROFILE_WORDS,
+} from '../constants/skillsTaxonomy';
 
 export interface ParameterScore {
   id: number;
@@ -41,33 +47,15 @@ interface JDAnalysis {
   responsibilities: string[];
 }
 
-const TECH_SKILLS = new Set([
-  'javascript', 'typescript', 'python', 'java', 'c++', 'c#', 'go', 'golang', 'rust', 'ruby', 'php', 'swift', 'kotlin', 'scala', 'r', 'sql', 'bash', 'shell',
-  'react', 'react.js', 'angular', 'vue', 'vue.js', 'svelte', 'next.js', 'nextjs', 'nuxt', 'gatsby', 'html', 'html5', 'css', 'css3', 'sass', 'scss', 'tailwind', 'bootstrap', 'material-ui', 'redux', 'mobx', 'webpack', 'vite',
-  'node.js', 'nodejs', 'express', 'nestjs', 'django', 'flask', 'fastapi', 'spring', 'spring boot', '.net', 'rails', 'laravel', 'graphql', 'rest', 'restful', 'microservices',
-  'mysql', 'postgresql', 'postgres', 'mongodb', 'redis', 'elasticsearch', 'dynamodb', 'cassandra', 'sqlite', 'oracle', 'firebase', 'supabase',
-  'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'k8s', 'terraform', 'ansible', 'jenkins', 'ci/cd', 'github actions', 'gitlab', 'circleci',
-  'jest', 'mocha', 'cypress', 'selenium', 'playwright', 'pytest', 'junit',
-  'machine learning', 'deep learning', 'tensorflow', 'pytorch', 'pandas', 'numpy', 'scikit-learn', 'jupyter', 'spark', 'hadoop', 'kafka',
-  'git', 'github', 'jira', 'confluence', 'figma', 'postman', 'swagger', 'linux', 'nginx',
-]);
+const TECH_SKILLS = new Set(
+  ALL_HARD_SKILLS.filter(s => !CONTACT_PROFILE_WORDS.has(s.toLowerCase()))
+);
 
-const TOOL_KEYWORDS = new Set([
-  'docker', 'kubernetes', 'k8s', 'terraform', 'ansible', 'jenkins', 'github actions', 'gitlab', 'circleci',
-  'aws', 'azure', 'gcp', 'jira', 'confluence', 'figma', 'postman', 'swagger', 'vscode',
-  'webpack', 'vite', 'babel', 'eslint', 'prettier', 'npm', 'yarn', 'pnpm',
-  'mysql', 'postgresql', 'mongodb', 'redis', 'elasticsearch', 'dynamodb', 'firebase', 'supabase',
-  'nginx', 'apache', 'linux', 'git', 'github', 'gitlab', 'bitbucket',
-]);
+const TOOL_KEYWORDS = new Set(
+  ALL_TOOL_SKILLS.filter(s => !CONTACT_PROFILE_WORDS.has(s.toLowerCase()))
+);
 
-const SOFT_SKILLS_LIST = [
-  'communication', 'teamwork', 'collaboration', 'leadership', 'problem-solving',
-  'problem solving', 'critical thinking', 'time management', 'adaptability',
-  'flexibility', 'creativity', 'attention to detail', 'organization', 'interpersonal',
-  'negotiation', 'conflict resolution', 'decision making', 'self-motivated', 'initiative',
-  'presentation', 'public speaking', 'mentoring', 'coaching', 'customer service',
-  'stakeholder management', 'cross-functional', 'agile', 'scrum', 'project management',
-];
+const SOFT_SKILLS_LIST = [...TAXONOMY_SOFT_SKILLS];
 
 const IMPACT_VERBS = new Set([
   'achieved', 'exceeded', 'surpassed', 'attained', 'accomplished', 'delivered', 'generated', 'produced',

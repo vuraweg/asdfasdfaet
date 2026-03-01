@@ -1,4 +1,10 @@
 import { ResumeData, UserType } from '../types/resume';
+import {
+  ALL_HARD_SKILLS,
+  ALL_TOOL_SKILLS,
+  SOFT_SKILLS,
+  CONTACT_PROFILE_WORDS,
+} from '../constants/skillsTaxonomy';
 
 export interface CategoryScore {
   id: string;
@@ -130,46 +136,13 @@ function statusFromPercentage(pct: number): CategoryScore['status'] {
 }
 
 function extractJDKeywords(jd: string): { hard: string[]; soft: string[]; tools: string[]; industry: string[] } {
-  const hardSkillPatterns = [
-    'python', 'java', 'javascript', 'typescript', 'c\\+\\+', 'c#', 'golang', 'go', 'rust', 'ruby', 'php',
-    'swift', 'kotlin', 'scala', 'matlab', 'sql', 'html', 'css', 'bash', 'shell', 'perl', 'dart', 'lua',
-    'react', 'react\\.js', 'angular', 'vue', 'vue\\.js', 'next\\.js', 'nuxt', 'svelte',
-    'node\\.js', 'express', 'fastapi', 'django', 'flask', 'spring', 'spring boot', 'laravel', 'rails',
-    'docker', 'kubernetes', 'k8s', 'aws', 'azure', 'gcp', 'terraform', 'ansible', 'jenkins', 'helm',
-    'mongodb', 'postgresql', 'mysql', 'sqlite', 'redis', 'elasticsearch', 'kafka', 'dynamodb', 'cassandra',
-    'machine learning', 'deep learning', 'nlp', 'computer vision', 'tensorflow', 'pytorch', 'keras',
-    'pandas', 'numpy', 'scikit-learn', 'spark', 'hadoop', 'databricks', 'airflow',
-    'rest api', 'graphql', 'microservices', 'ci/cd', 'agile', 'scrum', 'devops',
-    'git', 'linux', 'unix', 'data structures', 'algorithms', 'oop', 'design patterns', 'solid',
-    'power bi', 'tableau', 'excel', 'data visualization', 'data analysis', 'data engineering',
-    'figma', 'sketch', 'photoshop', 'illustrator', 'adobe xd',
-    'firebase', 'supabase', 'prisma', 'sequelize', 'hibernate',
-    'openai', 'langchain', 'llm', 'rag', 'vector database',
-    'selenium', 'cypress', 'jest', 'mocha', 'pytest', 'junit',
-    'flutter', 'react native', 'android', 'ios', 'xamarin',
-    'blockchain', 'solidity', 'web3',
-    'security', 'penetration testing', 'ethical hacking', 'siem', 'soc',
-    'networking', 'tcp/ip', 'dns', 'load balancer', 'cdn',
-    'object oriented', 'functional programming', 'concurrency', 'multithreading',
-    'api development', 'backend', 'frontend', 'full stack', 'fullstack',
-    'database design', 'system design', 'software architecture',
-  ];
+  const hardSkillPatterns = ALL_HARD_SKILLS.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
-  const softSkillPatterns = [
-    'communication', 'teamwork', 'leadership', 'problem.solving', 'critical thinking',
-    'time management', 'adaptability', 'collaboration', 'creativity', 'attention to detail',
-    'project management', 'stakeholder management', 'presentation', 'mentoring',
-    'analytical', 'self.motivated', 'fast learner', 'proactive',
-  ];
+  const softSkillPatterns = SOFT_SKILLS.map(s => s.replace(/-/g, '.'));
 
-  const toolPatterns = [
-    'jira', 'confluence', 'slack', 'trello', 'notion', 'asana', 'linear',
-    'vs code', 'intellij', 'eclipse', 'pycharm', 'xcode', 'android studio',
-    'postman', 'swagger', 'insomnia',
-    'github', 'gitlab', 'bitbucket', 'circleci', 'github actions', 'travis ci',
-    'datadog', 'grafana', 'prometheus', 'new relic', 'splunk', 'sentry',
-    'vercel', 'netlify', 'heroku', 'cloudflare', 'render',
-  ];
+  const toolPatterns = ALL_TOOL_SKILLS
+    .filter(s => !CONTACT_PROFILE_WORDS.has(s.toLowerCase()))
+    .map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
   const extractMatches = (patterns: string[]): string[] => {
     const found: string[] = [];
@@ -204,6 +177,7 @@ function extractJDKeywords(jd: string): { hard: string[]; soft: string[]; tools:
       'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
       'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
       'september', 'october', 'november', 'december',
+      'github', 'linkedin', 'portfolio', 'email', 'phone', 'website', 'twitter', 'medium',
     ]);
     const extra: string[] = [];
     let m;
@@ -265,6 +239,18 @@ function extractResumeSkills(resumeText: string, resumeData?: ResumeData): strin
   return [...new Set(skills.map(s => s.trim()).filter(Boolean))];
 }
 
+function normalizeSkillKey(skill: string): string {
+  return skill.toLowerCase()
+    .replace(/\.js$/i, '')
+    .replace(/\.?js$/i, '')
+    .replace(/[-_./]/g, '')
+    .trim();
+}
+
+function isContactWord(skill: string): boolean {
+  return CONTACT_PROFILE_WORDS.has(skill.toLowerCase().trim());
+}
+
 function buildSkillBuckets(
   resumeText: string,
   jobDescription: string,
@@ -274,15 +260,21 @@ function buildSkillBuckets(
   const resumeSkills = extractResumeSkills(resumeText, resumeData);
   const resumeLower = resumeText.toLowerCase();
 
-  const allJDSkills = [...jdKeywords.hard, ...jdKeywords.tools];
+  const allJDSkills = [...jdKeywords.hard, ...jdKeywords.tools]
+    .filter(s => !isContactWord(s));
   const allJDSoft = jdKeywords.soft;
 
   const mustHave: SkillMatch[] = [];
   const supporting: SkillMatch[] = [];
   const missing: SkillMatch[] = [];
   const irrelevant: SkillMatch[] = [];
+  const seenKeys = new Set<string>();
 
   for (const skill of allJDSkills) {
+    const key = normalizeSkillKey(skill);
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+
     const inResume = resumeLower.includes(skill.toLowerCase());
     if (inResume) {
       mustHave.push({ skill, inResume: true, inJD: true, importance: 'critical' });
@@ -292,6 +284,10 @@ function buildSkillBuckets(
   }
 
   for (const skill of allJDSoft) {
+    const key = normalizeSkillKey(skill);
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+
     const inResume = resumeLower.includes(skill.toLowerCase());
     if (inResume) {
       supporting.push({ skill, inResume: true, inJD: true, importance: 'important' });
@@ -300,12 +296,20 @@ function buildSkillBuckets(
     }
   }
 
+  const categoryHeaders = new Set([
+    'tools', 'platforms', 'languages', 'frameworks', 'databases', 'technologies',
+    'skills', 'technical', 'soft skills', 'other',
+  ]);
+
   const jdLower = jobDescription.toLowerCase();
   for (const skill of resumeSkills) {
     const skillLower = skill.toLowerCase();
-    const alreadyFound = mustHave.some(s => s.skill.toLowerCase() === skillLower) ||
-                          supporting.some(s => s.skill.toLowerCase() === skillLower);
-    if (alreadyFound) continue;
+    if (isContactWord(skillLower)) continue;
+    if (categoryHeaders.has(skillLower)) continue;
+
+    const key = normalizeSkillKey(skill);
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
 
     if (jdLower.includes(skillLower)) {
       supporting.push({ skill, inResume: true, inJD: true, importance: 'nice_to_have' });
