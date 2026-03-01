@@ -61,7 +61,7 @@ import { ScoringMode, ExtractionResult } from '../types/resume';
 import { ParsedResume } from '../services/geminiResumeParserService';
 import type { Subscription } from '../types/payment';
 import { paymentService } from '../services/paymentService';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSEO } from '../hooks/useSEO';
 import { runPremiumScoreEngine, PremiumScoreResult } from '../services/premiumScoreEngine';
@@ -101,6 +101,7 @@ export const ResumeScoreChecker: React.FC<ResumeScoreCheckerProps> = ({
   }
 
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useSEO({
     title: 'ATS Resume Score Checker - Free Resume Analysis & ATS Compatibility Test',
@@ -562,6 +563,16 @@ if (hasScoreCheckCredits) {
     
     // Default to experienced if unclear
     return 'experienced';
+  };
+
+  const handleOptimizeResume = () => {
+    navigate('/optimizer', {
+      state: {
+        jobDescription: jobDescription,
+        roleTitle: jobTitle,
+        fromScoreChecker: true,
+      },
+    });
   };
 
   const handleCheckAnotherResume = () => {
@@ -1039,6 +1050,7 @@ if (hasScoreCheckCredits) {
                     result={premiumResult}
                     onCheckAnother={handleCheckAnotherResume}
                     onNavigateBack={onNavigateBack}
+                    onOptimizeResume={handleOptimizeResume}
                   />
                 ) : (
                   <div className="max-w-5xl mx-auto space-y-6">

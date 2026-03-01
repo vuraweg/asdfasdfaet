@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { RotateCcw, ArrowLeft, FileText, Info } from 'lucide-react';
+import { RotateCcw, ArrowLeft, FileText, Info, Wand2 } from 'lucide-react';
 import type { PremiumScoreResult } from '../../services/premiumScoreEngine';
 import { ScoreOverviewCard } from './ScoreOverviewCard';
 import { CategoryBreakdown } from './CategoryBreakdown';
@@ -8,17 +8,20 @@ import { SkillBucketsPanel } from './SkillBucketsPanel';
 import { QuickWinsPanel } from './QuickWinsPanel';
 import { ProjectScoresPanel } from './ProjectScoresPanel';
 import { WeightDonutChart } from './WeightDonutChart';
+import { ScoreGapActionPanel } from './ScoreGapActionPanel';
 
 interface PremiumResultsDashboardProps {
   result: PremiumScoreResult;
   onCheckAnother: () => void;
   onNavigateBack: () => void;
+  onOptimizeResume?: () => void;
 }
 
 export const PremiumResultsDashboard: React.FC<PremiumResultsDashboardProps> = ({
   result,
   onCheckAnother,
   onNavigateBack,
+  onOptimizeResume,
 }) => {
   const showProjects = result.userType !== 'experienced' || result.projectScores.length > 0;
 
@@ -79,6 +82,42 @@ export const PremiumResultsDashboard: React.FC<PremiumResultsDashboardProps> = (
         <SkillBucketsPanel buckets={result.skillBuckets} />
         {showProjects && <ProjectScoresPanel projects={result.projectScores} />}
       </div>
+
+      <ScoreGapActionPanel
+        categories={result.categories}
+        skillBuckets={result.skillBuckets}
+        redFlags={result.redFlags}
+        quickWins={result.quickWins}
+        overallScore={result.overallScore}
+        projectedScore={result.projectedScore}
+      />
+
+      {onOptimizeResume && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="rounded-2xl border p-6"
+          style={{ background: 'rgba(16,185,129,0.04)', borderColor: 'rgba(16,185,129,0.2)' }}
+        >
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-lg font-semibold text-slate-100">Ready to fix these gaps automatically?</h3>
+              <p className="text-sm text-slate-400 mt-1">
+                Our AI optimizer will rewrite your resume to address missing keywords, weak sections, and red flags based on this analysis.
+              </p>
+            </div>
+            <button
+              onClick={onOptimizeResume}
+              className="shrink-0 px-8 py-3 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all duration-200 hover:scale-105 shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)', boxShadow: '0 8px 30px rgba(16,185,129,0.3)' }}
+            >
+              <Wand2 className="w-5 h-5" />
+              Optimize My Resume
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0 }}
