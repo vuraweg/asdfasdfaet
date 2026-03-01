@@ -7,32 +7,11 @@ interface CategoryBreakdownProps {
   categories: CategoryScore[];
 }
 
-const categoryIcons: Record<string, string> = {
-  section_order: '📋',
-  keyword_match: '🔑',
-  projects_quality: '🚀',
-  ats_compatibility: '🤖',
-  skills_quality: '⚡',
-  internship: '💼',
-  impact_achievements: '📊',
-  experience_quality: '🏢',
-  structure_readability: '📐',
-  education: '🎓',
-  online_presence: '🌐',
-};
-
-const statusColors: Record<string, { bg: string; border: string; text: string; bar: string }> = {
-  excellent: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', bar: 'bg-emerald-500' },
-  good: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', bar: 'bg-cyan-500' },
-  needs_work: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', bar: 'bg-amber-500' },
-  poor: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', bar: 'bg-red-500' },
-};
-
-const statusLabels: Record<string, string> = {
-  excellent: 'Excellent',
-  good: 'Good',
-  needs_work: 'Needs Work',
-  poor: 'Poor',
+const statusConfig: Record<string, { color: string; bg: string; border: string; barColor: string; label: string }> = {
+  excellent: { color: '#10b981', bg: 'rgba(16,185,129,0.06)', border: 'rgba(16,185,129,0.2)', barColor: '#10b981', label: 'Excellent' },
+  good:      { color: '#06b6d4', bg: 'rgba(6,182,212,0.06)',  border: 'rgba(6,182,212,0.2)',  barColor: '#06b6d4', label: 'Good' },
+  needs_work:{ color: '#f59e0b', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.2)', barColor: '#f59e0b', label: 'Needs Work' },
+  poor:      { color: '#ef4444', bg: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.2)',  barColor: '#ef4444', label: 'Poor' },
 };
 
 export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ categories }) => {
@@ -40,57 +19,63 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ categories
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-700/50 overflow-hidden"
+      transition={{ duration: 0.45, delay: 0.15 }}
+      className="rounded-2xl border overflow-hidden"
+      style={{ background: '#0f172a', borderColor: '#1e293b' }}
     >
-      <div className="p-5 border-b border-slate-700/40">
-        <h3 className="text-lg font-semibold text-slate-100">Score Breakdown</h3>
-        <p className="text-sm text-slate-400 mt-1">Click any category to see detailed checks</p>
+      <div className="px-5 py-4 border-b" style={{ borderColor: '#1e293b' }}>
+        <h3 className="text-base font-semibold text-slate-100">Score Breakdown</h3>
+        <p className="text-xs text-slate-500 mt-0.5">Click a category to see what passed and what to fix</p>
       </div>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-2">
         {categories.map((cat, index) => {
-          const colors = statusColors[cat.status];
+          const cfg = statusConfig[cat.status] ?? statusConfig.poor;
           const isExpanded = expandedId === cat.id;
 
           return (
             <motion.div
               key={cat.id}
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
+              transition={{ duration: 0.28, delay: 0.2 + index * 0.04 }}
+              className="rounded-xl overflow-hidden"
+              style={{ border: `1px solid ${isExpanded ? cfg.border : '#1e293b'}` }}
             >
               <button
                 onClick={() => setExpandedId(isExpanded ? null : cat.id)}
-                className={`w-full text-left rounded-xl border transition-all duration-200 ${
-                  isExpanded ? `${colors.bg} ${colors.border}` : 'bg-slate-800/40 border-slate-700/40 hover:border-slate-600/50'
-                }`}
+                className="w-full text-left p-4 transition-colors"
+                style={{ background: isExpanded ? cfg.bg : 'rgba(30,41,59,0.4)' }}
               >
-                <div className="p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">{categoryIcons[cat.id] || '📌'}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-slate-200 truncate">{cat.name}</span>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <span className={`text-xs font-medium ${colors.text} px-2 py-0.5 rounded-full ${colors.bg} ${colors.border} border`}>
-                            {statusLabels[cat.status]}
-                          </span>
-                          <span className="text-sm font-bold text-slate-300">{cat.percentage}%</span>
-                          <span className="text-xs text-slate-500">{cat.weight}% weight</span>
-                          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                        </div>
-                      </div>
-                      <div className="w-full bg-slate-700/50 rounded-full h-1.5">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${Math.min(cat.percentage, 100)}%` }}
-                          transition={{ duration: 0.8, delay: 0.4 + index * 0.05 }}
-                          className={`h-1.5 rounded-full ${colors.bar}`}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-2 gap-2">
+                      <span className="text-sm font-medium text-slate-200 truncate">{cat.name}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                          style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}
+                        >
+                          {cfg.label}
+                        </span>
+                        <span className="text-sm font-bold" style={{ color: cfg.color }}>{cat.percentage}%</span>
+                        <span className="text-xs text-slate-600">{cat.weight}% wt</span>
+                        <ChevronDown
+                          className="w-3.5 h-3.5 text-slate-500 transition-transform"
+                          style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
                         />
                       </div>
+                    </div>
+                    <div className="h-1.5 rounded-full" style={{ background: '#1e293b' }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(cat.percentage, 100)}%` }}
+                        transition={{ duration: 0.8, delay: 0.3 + index * 0.04 }}
+                        className="h-1.5 rounded-full"
+                        style={{ background: cfg.barColor }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -102,52 +87,50 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ categories
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.18 }}
                     className="overflow-hidden"
                   >
-                    <div className="px-4 pb-4 pt-2 space-y-3">
-                      <div className="space-y-2">
-                        {cat.subChecks.map(check => (
-                          <div
-                            key={check.id}
-                            className={`flex items-start gap-3 p-3 rounded-lg border ${
-                              check.passed
-                                ? 'bg-emerald-500/5 border-emerald-500/20'
-                                : check.severity === 'critical'
-                                ? 'bg-red-500/5 border-red-500/20'
-                                : 'bg-amber-500/5 border-amber-500/20'
-                            }`}
-                          >
-                            {check.passed ? (
-                              <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                            ) : check.severity === 'critical' ? (
-                              <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                            ) : (
-                              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-sm font-medium ${check.passed ? 'text-slate-200' : 'text-slate-300'}`}>
-                                  {check.label}
-                                </span>
-                                {check.severity === 'critical' && !check.passed && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 font-medium uppercase">Critical</span>
-                                )}
-                              </div>
-                              <p className="text-xs text-slate-400 mt-0.5">{check.detail}</p>
-                              {check.fix && !check.passed && (
-                                <p className="text-xs text-cyan-400/80 mt-1">Fix: {check.fix}</p>
+                    <div className="px-4 pb-4 pt-1 space-y-2" style={{ background: '#0c1420' }}>
+                      {cat.subChecks.map(check => (
+                        <div
+                          key={check.id}
+                          className="flex items-start gap-3 p-3 rounded-lg"
+                          style={{
+                            background: check.passed ? 'rgba(16,185,129,0.04)' :
+                              check.severity === 'critical' ? 'rgba(239,68,68,0.04)' : 'rgba(245,158,11,0.04)',
+                            border: `1px solid ${check.passed ? 'rgba(16,185,129,0.15)' :
+                              check.severity === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}`
+                          }}
+                        >
+                          {check.passed ? (
+                            <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                          ) : check.severity === 'critical' ? (
+                            <XCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+                          ) : (
+                            <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-slate-200">{check.label}</span>
+                              {!check.passed && check.severity === 'critical' && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-300 font-semibold uppercase tracking-wide">Critical</span>
                               )}
                             </div>
+                            <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{check.detail}</p>
+                            {check.fix && !check.passed && (
+                              <p className="text-xs text-cyan-400 mt-1">
+                                <span className="font-medium">Fix:</span> {check.fix}
+                              </p>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
 
                       {cat.suggestions.length > 0 && (
-                        <div className="pt-2 border-t border-slate-700/30">
-                          <p className="text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Suggestions</p>
+                        <div className="pt-2 border-t" style={{ borderColor: '#1e293b' }}>
+                          <p className="text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wider">Suggestions</p>
                           {cat.suggestions.map((s, i) => (
-                            <p key={i} className="text-sm text-slate-300 ml-2 mb-1">- {s}</p>
+                            <p key={i} className="text-sm text-slate-400 mb-1 pl-2 border-l-2 border-slate-700">{s}</p>
                           ))}
                         </div>
                       )}

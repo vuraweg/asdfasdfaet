@@ -1268,6 +1268,17 @@ const checkForMissingSections = useCallback((resumeData: ResumeData): string[] =
               </div>
             )}
 
+            {optimizedResume && (
+              <div className="flex items-start gap-3 p-4 rounded-xl border mb-2"
+                style={{ background: 'rgba(245,158,11,0.06)', borderColor: 'rgba(245,158,11,0.3)' }}>
+                <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                <p className="text-sm text-amber-200 leading-relaxed">
+                  <span className="font-semibold">Download your resume before closing this page.</span>{' '}
+                  If you close or navigate away, your optimized resume will not be recoverable. Use the <span className="font-semibold">Export Resume</span> button to save it now.
+                </p>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
               <button
                 onClick={handleStartNewResume}

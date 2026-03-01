@@ -596,10 +596,10 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                       </div>
                     )}
                     {descEff && descEff !== titleEff && (
-                      <div style={{ 
-                        fontSize: '10px', 
+                      <div style={{
+                        fontSize: '10px',
                         lineHeight: '1.4',
-                        color: '#4a5568',
+                        color: '#000000',
                         marginLeft: mmToPx(2)
                       }}>
                         {descEff}
@@ -746,7 +746,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
           backgroundColor: 'white',
           overflow: 'hidden',
           transition: isScaling ? 'none' : 'transform 0.3s ease',
-          marginBottom: `${mmToPx(PDF_CONFIG.pageHeight) * (1 - scaleFactor)}px`,
+          marginBottom: scaleFactor < 1 ? `${mmToPx(PDF_CONFIG.pageHeight) * (scaleFactor - 1)}px` : '0px',
         }}
       >
           {/* Header */}

@@ -130,34 +130,45 @@ function statusFromPercentage(pct: number): CategoryScore['status'] {
 }
 
 function extractJDKeywords(jd: string): { hard: string[]; soft: string[]; tools: string[]; industry: string[] } {
-  const jdLower = jd.toLowerCase();
-
   const hardSkillPatterns = [
-    'python', 'java', 'javascript', 'typescript', 'c\\+\\+', 'c#', 'go', 'rust', 'ruby', 'php',
-    'swift', 'kotlin', 'scala', 'r\\b', 'matlab', 'sql', 'html', 'css', 'bash', 'shell',
-    'react', 'angular', 'vue', 'next\\.js', 'node\\.js', 'express', 'django', 'flask', 'spring',
-    'docker', 'kubernetes', 'aws', 'azure', 'gcp', 'terraform', 'ansible', 'jenkins',
-    'mongodb', 'postgresql', 'mysql', 'redis', 'elasticsearch', 'kafka',
-    'machine learning', 'deep learning', 'nlp', 'computer vision', 'tensorflow', 'pytorch',
-    'pandas', 'numpy', 'scikit-learn', 'spark', 'hadoop',
-    'rest api', 'graphql', 'microservices', 'ci/cd', 'agile', 'scrum',
-    'git', 'linux', 'data structures', 'algorithms', 'oop', 'design patterns',
-    'power bi', 'tableau', 'excel', 'data visualization', 'data analysis',
-    'figma', 'sketch', 'photoshop', 'illustrator',
+    'python', 'java', 'javascript', 'typescript', 'c\\+\\+', 'c#', 'golang', 'go', 'rust', 'ruby', 'php',
+    'swift', 'kotlin', 'scala', 'matlab', 'sql', 'html', 'css', 'bash', 'shell', 'perl', 'dart', 'lua',
+    'react', 'react\\.js', 'angular', 'vue', 'vue\\.js', 'next\\.js', 'nuxt', 'svelte',
+    'node\\.js', 'express', 'fastapi', 'django', 'flask', 'spring', 'spring boot', 'laravel', 'rails',
+    'docker', 'kubernetes', 'k8s', 'aws', 'azure', 'gcp', 'terraform', 'ansible', 'jenkins', 'helm',
+    'mongodb', 'postgresql', 'mysql', 'sqlite', 'redis', 'elasticsearch', 'kafka', 'dynamodb', 'cassandra',
+    'machine learning', 'deep learning', 'nlp', 'computer vision', 'tensorflow', 'pytorch', 'keras',
+    'pandas', 'numpy', 'scikit-learn', 'spark', 'hadoop', 'databricks', 'airflow',
+    'rest api', 'graphql', 'microservices', 'ci/cd', 'agile', 'scrum', 'devops',
+    'git', 'linux', 'unix', 'data structures', 'algorithms', 'oop', 'design patterns', 'solid',
+    'power bi', 'tableau', 'excel', 'data visualization', 'data analysis', 'data engineering',
+    'figma', 'sketch', 'photoshop', 'illustrator', 'adobe xd',
+    'firebase', 'supabase', 'prisma', 'sequelize', 'hibernate',
+    'openai', 'langchain', 'llm', 'rag', 'vector database',
+    'selenium', 'cypress', 'jest', 'mocha', 'pytest', 'junit',
+    'flutter', 'react native', 'android', 'ios', 'xamarin',
+    'blockchain', 'solidity', 'web3',
+    'security', 'penetration testing', 'ethical hacking', 'siem', 'soc',
+    'networking', 'tcp/ip', 'dns', 'load balancer', 'cdn',
+    'object oriented', 'functional programming', 'concurrency', 'multithreading',
+    'api development', 'backend', 'frontend', 'full stack', 'fullstack',
+    'database design', 'system design', 'software architecture',
   ];
 
   const softSkillPatterns = [
     'communication', 'teamwork', 'leadership', 'problem.solving', 'critical thinking',
     'time management', 'adaptability', 'collaboration', 'creativity', 'attention to detail',
     'project management', 'stakeholder management', 'presentation', 'mentoring',
+    'analytical', 'self.motivated', 'fast learner', 'proactive',
   ];
 
   const toolPatterns = [
-    'jira', 'confluence', 'slack', 'trello', 'notion', 'asana',
-    'vs code', 'intellij', 'eclipse', 'postman', 'swagger',
-    'github', 'gitlab', 'bitbucket', 'circleci', 'github actions',
-    'datadog', 'grafana', 'prometheus', 'new relic', 'splunk',
-    'vercel', 'netlify', 'heroku', 'cloudflare',
+    'jira', 'confluence', 'slack', 'trello', 'notion', 'asana', 'linear',
+    'vs code', 'intellij', 'eclipse', 'pycharm', 'xcode', 'android studio',
+    'postman', 'swagger', 'insomnia',
+    'github', 'gitlab', 'bitbucket', 'circleci', 'github actions', 'travis ci',
+    'datadog', 'grafana', 'prometheus', 'new relic', 'splunk', 'sentry',
+    'vercel', 'netlify', 'heroku', 'cloudflare', 'render',
   ];
 
   const extractMatches = (patterns: string[]): string[] => {
@@ -172,15 +183,32 @@ function extractJDKeywords(jd: string): { hard: string[]; soft: string[]; tools:
     return [...new Set(found)];
   };
 
+  const hardFound = extractMatches(hardSkillPatterns);
+
+  if (hardFound.length < 3) {
+    const techWordRegex = /\b([A-Z][a-zA-Z0-9+#.]+(?:\.[jJ][sS])?)\b/g;
+    const extra: string[] = [];
+    let m;
+    while ((m = techWordRegex.exec(jd)) !== null) {
+      const w = m[1];
+      if (w.length >= 2 && w.length <= 25 &&
+        !/^(?:The|This|Our|We|You|Your|They|Their|With|For|And|But|Can|Will|Must|Have|Has|Are|Is|An|In|On|Of|To|As|At|By|Do|Be|It|If|Or|Not|From|That|With|Which|About|After|Before|Under|Above|Into|Through|Over|Between|Within|Without|During|Against|Along|Across|Behind|Beyond|Including)$/i.test(w)
+      ) {
+        extra.push(w);
+      }
+    }
+    hardFound.push(...[...new Set(extra)].slice(0, 10));
+  }
+
   const industryWords: string[] = [];
-  const sentences = jd.split(/[.!?]+/);
+  const sentences = jd.split(/[.!?\n]+/);
   for (const s of sentences) {
     const words = s.match(/\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\b/g);
     if (words) industryWords.push(...words);
   }
 
   return {
-    hard: extractMatches(hardSkillPatterns),
+    hard: [...new Set(hardFound)],
     soft: extractMatches(softSkillPatterns),
     tools: extractMatches(toolPatterns),
     industry: [...new Set(industryWords)].slice(0, 15),
@@ -417,14 +445,16 @@ function scoreKeywordMatch(
 
   const totalJD = skillBuckets.mustHave.length + skillBuckets.missing.filter(s => s.importance === 'critical').length;
   const matched = skillBuckets.mustHave.length;
-  const hardPct = totalJD > 0 ? Math.round((matched / totalJD) * 100) : 0;
+  const hardPct = totalJD > 0 ? Math.round((matched / totalJD) * 100) : 75;
   checks.push({
     id: 'hard_skills_match',
     label: 'Hard skills match',
     passed: hardPct >= 60,
     severity: 'critical',
-    detail: `${hardPct}% of required hard skills found (${matched}/${totalJD})`,
-    fix: 'Add missing technical skills from the job description',
+    detail: totalJD > 0
+      ? `${hardPct}% of required hard skills found (${matched}/${totalJD})`
+      : 'Could not extract specific skill requirements from JD',
+    fix: hardPct < 60 ? 'Add missing technical skills from the job description' : undefined,
   });
   raw += Math.round((hardPct / 100) * 8);
 
@@ -855,46 +885,49 @@ function scoreInternship(resumeText: string, resumeData?: ResumeData): CategoryS
 
   const experiences = resumeData?.workExperience || [];
   const textLower = resumeText.toLowerCase();
-  const hasInternship = experiences.length > 0 || /intern|internship|trainee/i.test(textLower);
+  const hasPracticalExp = experiences.length > 0 ||
+    /intern|internship|trainee|work experience|employment|worked at|worked for/i.test(textLower);
   const hasFreelance = /freelance|contract|self.employed|personal project|live project/i.test(textLower);
 
-  if (hasInternship) {
+  if (hasPracticalExp) {
+    const isInternship = /intern|internship|trainee/i.test(textLower) ||
+      experiences.some(e => /intern|trainee/i.test((e.company || '') + (e.title || '') + (e.role || '')));
     checks.push({
       id: 'has_internship',
-      label: 'Internship/experience present',
+      label: isInternship ? 'Internship present' : 'Work experience present',
       passed: true,
       severity: 'important',
-      detail: 'Practical experience found',
+      detail: isInternship ? 'Internship experience found' : 'Work experience found',
     });
     raw += 2;
 
     const allBullets = experiences.flatMap(e => e.bullets || []).join(' ');
-    const hasTools = /(?:python|java|react|sql|excel|power bi|aws|docker)/i.test(allBullets);
+    const hasTools = /(?:python|java|react|sql|excel|power bi|aws|docker|node|angular|vue|typescript|javascript)/i.test(allBullets + ' ' + textLower);
     checks.push({
       id: 'tools_used',
-      label: 'Tools used mentioned',
+      label: 'Tools/technologies mentioned',
       passed: hasTools,
       severity: 'minor',
       detail: hasTools ? 'Tools/technologies mentioned in experience' : 'No specific tools mentioned',
-      fix: 'Add specific tools used during internship',
+      fix: 'Add specific tools used in your experience',
     });
     if (hasTools) raw += 1;
 
-    const hasMetrics = /\d+%|\d+x|\$\d+|\d+\s*(?:users|records|lines|files)/i.test(allBullets);
+    const hasMetrics = /\d+%|\d+x|\$\d+|\d+\s*(?:users|records|lines|files|clients|projects|members)/i.test(allBullets);
     checks.push({
       id: 'measurable_impact',
       label: 'Measurable impact',
       passed: hasMetrics,
       severity: 'important',
       detail: hasMetrics ? 'Quantified results present' : 'No measurable impact shown',
-      fix: 'Add metrics to internship achievements',
+      fix: 'Add metrics to your experience bullets (e.g., "reduced load time by 40%")',
     });
     if (hasMetrics) raw += 2;
-    else quickWins.push('Add a metric to your internship experience (e.g., "processed 5000+ records")');
+    else quickWins.push('Add at least one metric to your experience (e.g., "processed 5000+ records")');
   } else if (hasFreelance) {
     checks.push({
       id: 'has_internship',
-      label: 'Freelance/live project proof',
+      label: 'Freelance/live project experience',
       passed: true,
       severity: 'important',
       detail: 'Freelance or live project experience found',
@@ -906,10 +939,10 @@ function scoreInternship(resumeText: string, resumeData?: ResumeData): CategoryS
       label: 'Practical experience',
       passed: false,
       severity: 'important',
-      detail: 'No internship, freelance, or live project experience found',
-      fix: 'Add any practical experience - internships, freelance work, or live projects',
+      detail: 'No internship, work experience, or live project found',
+      fix: 'Add any practical experience - internships, work experience, or live projects',
     });
-    suggestions.push('Consider adding internship experience or live project work');
+    suggestions.push('Consider adding internship or work experience');
   }
 
   raw = Math.min(raw, maxRaw);
