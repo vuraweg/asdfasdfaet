@@ -163,6 +163,23 @@ async function extractWithRetry(text: string): Promise<any> {
   }
 }
 
+const INTERNSHIP_PATTERN = /intern|trainee|apprentice|industrial training|summer training|winter training/i;
+const DEGREE_PATTERN = /\b(b\.?\s*tech|m\.?\s*tech|b\.?\s*e\b|m\.?\s*e\b|b\.?\s*sc|m\.?\s*sc|b\.?\s*a\b|m\.?\s*a\b|b\.?\s*com|m\.?\s*com|mba|phd|diploma|ssc|hsc|10th|12th|intermediate|high school|bachelor|master|associate|doctorate)\b/i;
+
+function isInternshipEntry(entry: any): boolean {
+  const combined = [
+    entry.degree || '',
+    entry.institution || entry.school || '',
+    entry.role || entry.title || '',
+    entry.company || '',
+    ...(Array.isArray(entry.bullets) ? entry.bullets : []),
+  ].join(' ');
+  if (INTERNSHIP_PATTERN.test(combined)) return true;
+  if (entry.company && entry.role && !DEGREE_PATTERN.test(entry.degree || '')) return true;
+  if (entry.bullets && Array.isArray(entry.bullets) && entry.bullets.length > 0 && !DEGREE_PATTERN.test(entry.degree || '')) return true;
+  return false;
+}
+
 function mapToResume(parsed: any, rawText: string): ParsedResume {
   const truncatedText = rawText.length > MAX_PARSED_TEXT_LENGTH
     ? rawText.substring(0, MAX_PARSED_TEXT_LENGTH) + '... [truncated]'
@@ -170,7 +187,19 @@ function mapToResume(parsed: any, rawText: string): ParsedResume {
 
   const contact = parsed.contact || {};
 
-  const education: Education[] = (parsed.education || []).map((e: any) => ({
+  const rawEducation = parsed.education || [];
+  const realEducation: any[] = [];
+  const rescuedExperience: any[] = [];
+
+  for (const e of rawEducation) {
+    if (isInternshipEntry(e)) {
+      rescuedExperience.push(e);
+    } else {
+      realEducation.push(e);
+    }
+  }
+
+  const education: Education[] = realEducation.map((e: any) => ({
     degree: e.degree || '',
     school: e.institution || e.school || '',
     year: e.year || '',
@@ -178,7 +207,18 @@ function mapToResume(parsed: any, rawText: string): ParsedResume {
     location: e.location || '',
   }));
 
-  const workExperience: WorkExperience[] = (parsed.experience || parsed.workExperience || []).map((w: any) => ({
+  const parsedExperience = parsed.experience || parsed.workExperience || [];
+  const allExperience = [
+    ...parsedExperience,
+    ...rescuedExperience.map((e: any) => ({
+      company: e.institution || e.school || e.company || '',
+      role: e.degree || e.role || e.title || '',
+      duration: e.year || e.duration || '',
+      bullets: Array.isArray(e.bullets) ? e.bullets : [],
+    })),
+  ];
+
+  const workExperience: WorkExperience[] = allExperience.map((w: any) => ({
     role: w.role || w.title || '',
     company: w.company || '',
     year: w.duration || w.year || '',
