@@ -41,6 +41,7 @@ import { MissingSections, arrayToMissingSections } from '../types/edenai';
 
 import { runOptimizationLoop, OptimizationSessionResult } from '../services/optimizationLoopController';
 import ScoreDeltaDisplay from './ScoreDeltaDisplay';
+import MissingProfilePrompt from './MissingProfilePrompt';
 import ResumeEditor from './editor/ResumeEditor';
 import ExportResumeModal from './ExportResumeModal';
 
@@ -166,6 +167,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({
   } | null>(null);
 
   const [jdOptimizationResult, setJdOptimizationResult] = useState<OptimizationSessionResult | null>(null);
+  const [showMissingProfile, setShowMissingProfile] = useState(true);
 
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
   const [showProjectMismatch, setShowProjectMismatch] = useState(false);
@@ -1382,6 +1384,13 @@ const checkForMissingSections = useCallback((resumeData: ResumeData): string[] =
                         userActionCards={jdOptimizationResult.gapClassification.userActionCards}
                       />
                     </div>
+                  )}
+
+                  {optimizedResume && showMissingProfile && (
+                    <MissingProfilePrompt
+                      resumeData={optimizedResume}
+                      onDismiss={() => setShowMissingProfile(false)}
+                    />
                   )}
 
                   {!jdOptimizationResult && parameter16Scores && (

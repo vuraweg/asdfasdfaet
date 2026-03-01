@@ -79,7 +79,10 @@ Important:
 - Separate bullet points correctly.
 - Extract skills individually.
 - Extract company names and roles properly.
-- If multiple experiences exist, return all.`;
+- If multiple experiences exist, return all.
+- CRITICAL: Internships, Trainee positions, and any "Internship" section MUST go into the "experience" array, NOT into "education". They are work experience.
+- If you see a section titled "Internship" or "Internships", treat every entry under it as work experience with company, role, duration, and bullets.
+- Only put academic degrees (B.Tech, M.Tech, BSc, MSc, MBA, PhD, High School, SSC, Intermediate, etc.) into the "education" array.`;
 
 const REQUIRED_KEYS = ['name', 'contact', 'experience', 'education'];
 

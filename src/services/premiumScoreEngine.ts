@@ -1314,6 +1314,31 @@ function detectRedFlags(resumeText: string, resumeData?: ResumeData, userType?: 
     }
   }
 
+  const hasLinkedin = /linkedin\.com\/in\//i.test(resumeText) || !!resumeData?.linkedin;
+  const hasGithub = /github\.com\//i.test(resumeText) || !!resumeData?.github;
+
+  if (!hasLinkedin) {
+    flags.push({
+      id: 'missing_linkedin',
+      title: 'LinkedIn URL missing',
+      severity: 'high',
+      description: 'Recruiters expect a LinkedIn profile on every resume. Missing it reduces your online presence score.',
+      fix: 'Add your LinkedIn profile URL (linkedin.com/in/yourname) to the contact section',
+      category: 'online_presence',
+    });
+  }
+
+  if (!hasGithub) {
+    flags.push({
+      id: 'missing_github',
+      title: 'GitHub / Portfolio URL missing',
+      severity: 'high',
+      description: 'For tech roles, a GitHub or portfolio link shows your code quality and project work.',
+      fix: 'Add your GitHub profile URL (github.com/yourname) to the contact section',
+      category: 'online_presence',
+    });
+  }
+
   const companySkills = ['wipro', 'tcs', 'infosys', 'cognizant', 'accenture', 'capgemini', 'hcl'];
   const skillsSection = resumeText.match(/(?:skills?|technical)[\s\S]*?(?=\n[A-Z][A-Za-z\s]+:|\n\n|$)/i);
   if (skillsSection) {
