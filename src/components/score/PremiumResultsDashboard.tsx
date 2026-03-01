@@ -8,7 +8,6 @@ import { SkillBucketsPanel } from './SkillBucketsPanel';
 import { QuickWinsPanel } from './QuickWinsPanel';
 import { ProjectScoresPanel } from './ProjectScoresPanel';
 import { WeightDonutChart } from './WeightDonutChart';
-import { ScoreGapActionPanel } from './ScoreGapActionPanel';
 
 interface PremiumResultsDashboardProps {
   result: PremiumScoreResult;
@@ -82,15 +81,6 @@ export const PremiumResultsDashboard: React.FC<PremiumResultsDashboardProps> = (
         <SkillBucketsPanel buckets={result.skillBuckets} />
         {showProjects && <ProjectScoresPanel projects={result.projectScores} />}
       </div>
-
-      <ScoreGapActionPanel
-        categories={result.categories}
-        skillBuckets={result.skillBuckets}
-        redFlags={result.redFlags}
-        quickWins={result.quickWins}
-        overallScore={result.overallScore}
-        projectedScore={result.projectedScore}
-      />
 
       {onOptimizeResume && (
         <motion.div

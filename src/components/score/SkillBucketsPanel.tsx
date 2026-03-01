@@ -108,14 +108,14 @@ export const SkillBucketsPanel: React.FC<SkillBucketsPanelProps> = ({ buckets })
           <div>
             <div className="flex items-center gap-2 mb-3">
               <MinusCircle className="w-4 h-4 text-slate-500" />
-              <span className="text-sm font-medium text-slate-400">Consider Removing (Not in JD)</span>
+              <span className="text-sm font-medium text-slate-400">Not Mentioned in JD</span>
               <span className="ml-auto text-xs text-slate-500">{buckets.irrelevant.length} skills</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {buckets.irrelevant.slice(0, 10).map((s, i) => (
                 <span
                   key={i}
-                  className="px-3 py-1 text-xs font-medium rounded-full bg-slate-800/50 text-slate-500 border border-slate-700/40 line-through"
+                  className="px-3 py-1 text-xs font-medium rounded-full bg-slate-800/50 text-slate-500 border border-slate-700/40"
                 >
                   {s.skill}
                 </span>
@@ -126,6 +126,9 @@ export const SkillBucketsPanel: React.FC<SkillBucketsPanelProps> = ({ buckets })
                 </span>
               )}
             </div>
+            <p className="text-xs text-slate-500 mt-2">
+              These skills from your resume are not in this job description, but may be relevant for other roles
+            </p>
           </div>
         )}
       </div>

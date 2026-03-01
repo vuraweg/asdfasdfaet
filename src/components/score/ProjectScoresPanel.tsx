@@ -75,7 +75,6 @@ export const ProjectScoresPanel: React.FC<ProjectScoresPanelProps> = ({ projects
                   { key: 'toolsMentioned', label: 'Tools' },
                   { key: 'measurableResults', label: 'Metrics' },
                   { key: 'businessImpact', label: 'Impact' },
-                  { key: 'githubLink', label: 'Link' },
                 ].map(({ key, label }) => {
                   const passed = proj.checks[key as keyof typeof proj.checks];
                   return (

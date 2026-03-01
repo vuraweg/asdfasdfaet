@@ -187,13 +187,29 @@ function extractJDKeywords(jd: string): { hard: string[]; soft: string[]; tools:
 
   if (hardFound.length < 3) {
     const techWordRegex = /\b([A-Z][a-zA-Z0-9+#.]+(?:\.[jJ][sS])?)\b/g;
+    const nonTechWords = new Set([
+      'the', 'this', 'our', 'we', 'you', 'your', 'they', 'their', 'with', 'for', 'and', 'but',
+      'can', 'will', 'must', 'have', 'has', 'are', 'is', 'an', 'in', 'on', 'of', 'to', 'as',
+      'at', 'by', 'do', 'be', 'it', 'if', 'or', 'not', 'from', 'that', 'which', 'about',
+      'after', 'before', 'under', 'above', 'into', 'through', 'over', 'between', 'within',
+      'without', 'during', 'against', 'along', 'across', 'behind', 'beyond', 'including',
+      'role', 'company', 'team', 'work', 'working', 'digital', 'services', 'key', 'performing',
+      'workplace', 'multicloud', 'responsible', 'required', 'preferred', 'strong', 'excellent',
+      'good', 'ability', 'experience', 'years', 'level', 'position', 'department', 'manager',
+      'senior', 'junior', 'lead', 'staff', 'associate', 'principal', 'director', 'analyst',
+      'engineer', 'developer', 'designer', 'architect', 'consultant', 'specialist', 'coordinator',
+      'environment', 'industry', 'client', 'customer', 'business', 'solution', 'solutions',
+      'enterprise', 'global', 'local', 'remote', 'hybrid', 'onsite', 'office', 'location',
+      'salary', 'benefits', 'bonus', 'equity', 'stock', 'option', 'compensation',
+      'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+      'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
+      'september', 'october', 'november', 'december',
+    ]);
     const extra: string[] = [];
     let m;
     while ((m = techWordRegex.exec(jd)) !== null) {
       const w = m[1];
-      if (w.length >= 2 && w.length <= 25 &&
-        !/^(?:The|This|Our|We|You|Your|They|Their|With|For|And|But|Can|Will|Must|Have|Has|Are|Is|An|In|On|Of|To|As|At|By|Do|Be|It|If|Or|Not|From|That|With|Which|About|After|Before|Under|Above|Into|Through|Over|Between|Within|Without|During|Against|Along|Across|Behind|Beyond|Including)$/i.test(w)
-      ) {
+      if (w.length >= 2 && w.length <= 25 && !nonTechWords.has(w.toLowerCase())) {
         extra.push(w);
       }
     }
@@ -215,11 +231,23 @@ function extractJDKeywords(jd: string): { hard: string[]; soft: string[]; tools:
   };
 }
 
+function isValidSkillName(text: string): boolean {
+  if (text.length < 2 || text.length > 35) return false;
+  if (/\d+%/.test(text)) return false;
+  if (/\d+x\b/.test(text)) return false;
+  if (/\$\d+/.test(text)) return false;
+  if (/(?:improving|reducing|achieving|serving|increasing|decreasing|saving|generating)\s/i.test(text)) return false;
+  if (/\b(?:by|of|to|from|with|for|the|and|or|in|at)\s.*\b(?:by|of|to|from|with|for|the|and|or|in|at)\s/i.test(text)) return false;
+  if ((text.match(/\s+/g) || []).length > 3) return false;
+  if (/^\d+\s/.test(text)) return false;
+  return true;
+}
+
 function extractResumeSkills(resumeText: string, resumeData?: ResumeData): string[] {
   const skills: string[] = [];
   if (resumeData?.skills) {
     for (const cat of resumeData.skills) {
-      skills.push(...cat.list);
+      skills.push(...cat.list.filter(isValidSkillName));
     }
   }
 
@@ -229,7 +257,7 @@ function extractResumeSkills(resumeText: string, resumeData?: ResumeData): strin
       const items = line.replace(/^[^:]+:\s*/, '').split(/[,;|]/);
       for (const item of items) {
         const trimmed = item.trim();
-        if (trimmed.length > 1 && trimmed.length < 40) skills.push(trimmed);
+        if (isValidSkillName(trimmed)) skills.push(trimmed);
       }
     }
   }
@@ -639,16 +667,7 @@ function scoreProjectsQuality(resumeText: string, resumeData?: ResumeData, userT
   });
   raw += Math.round((totalImpactScore / effectiveCount) * 4);
 
-  checks.push({
-    id: 'github_link',
-    label: 'GitHub / Portfolio link',
-    passed: totalGithubScore >= 1,
-    severity: 'minor',
-    detail: totalGithubScore > 0 ? `${totalGithubScore} project(s) have links` : 'No project links found',
-    fix: 'Add GitHub or live demo links to your projects',
-  });
   if (totalGithubScore > 0) raw += 3;
-  else quickWins.push('Add GitHub links to your projects');
 
   if (projectCount < 2) suggestions.push('Add at least 2 projects with real-world relevance');
   if (totalMetricsScore === 0) suggestions.push('Include measurable outcomes in project descriptions');
@@ -1253,7 +1272,6 @@ function scoreOnlinePresence(resumeText: string, resumeData?: ResumeData): Onlin
   else suggestions.push('Add your GitHub profile URL to your resume');
 
   if (portfolio) score += 1;
-  else suggestions.push('Consider adding a portfolio website link');
 
   return { score, maxScore, linkedin, github, portfolio, suggestions };
 }
@@ -1544,7 +1562,6 @@ export function runPremiumScoreEngine(
     const sug: string[] = [];
     if (!measurableResults) sug.push('Add quantifiable results');
     if (!toolsMentioned) sug.push('List specific technologies used');
-    if (!githubLink) sug.push('Add GitHub or demo link');
 
     return {
       title: proj.title,

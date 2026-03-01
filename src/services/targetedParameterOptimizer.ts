@@ -205,14 +205,29 @@ function addMissingKeywords(resume: ResumeData, jobDescription: string): Optimiz
   ].join(' ').toLowerCase();
 
   const techSkills = new Set([
-    'javascript', 'typescript', 'python', 'java', 'c++', 'c#', 'go', 'rust', 'ruby', 'php', 'swift', 'kotlin',
-    'react', 'angular', 'vue', 'svelte', 'next.js', 'node.js', 'express', 'django', 'flask', 'spring',
-    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'jenkins', 'ci/cd',
-    'mysql', 'postgresql', 'mongodb', 'redis', 'elasticsearch', 'dynamodb', 'firebase',
-    'git', 'github', 'jira', 'figma', 'postman', 'linux', 'nginx',
-    'jest', 'cypress', 'selenium', 'pytest',
-    'machine learning', 'deep learning', 'tensorflow', 'pytorch',
-    'graphql', 'rest', 'microservices', 'webpack', 'vite', 'tailwind', 'bootstrap',
+    'javascript', 'typescript', 'python', 'java', 'c++', 'c#', 'go', 'golang', 'rust', 'ruby', 'php',
+    'swift', 'kotlin', 'scala', 'matlab', 'sql', 'html', 'css', 'bash', 'shell', 'perl', 'dart', 'lua',
+    'react', 'angular', 'vue', 'svelte', 'next.js', 'nuxt', 'node.js', 'express', 'fastapi',
+    'django', 'flask', 'spring', 'spring boot', 'laravel', 'rails',
+    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'k8s', 'terraform', 'ansible', 'jenkins', 'helm',
+    'ci/cd', 'devops', 'agile', 'scrum',
+    'mysql', 'postgresql', 'mongodb', 'sqlite', 'redis', 'elasticsearch', 'kafka', 'dynamodb', 'cassandra',
+    'firebase', 'supabase', 'prisma', 'sequelize', 'hibernate',
+    'git', 'github', 'gitlab', 'bitbucket', 'linux', 'unix', 'nginx',
+    'jira', 'confluence', 'slack', 'trello', 'notion', 'asana', 'postman', 'swagger', 'figma',
+    'jest', 'cypress', 'selenium', 'pytest', 'junit', 'mocha',
+    'machine learning', 'deep learning', 'nlp', 'computer vision', 'tensorflow', 'pytorch', 'keras',
+    'pandas', 'numpy', 'scikit-learn', 'spark', 'hadoop', 'databricks', 'airflow',
+    'graphql', 'rest api', 'microservices', 'webpack', 'vite', 'tailwind', 'bootstrap',
+    'power bi', 'tableau', 'excel', 'data visualization', 'data analysis', 'data engineering',
+    'openai', 'langchain', 'llm', 'rag', 'vector database',
+    'flutter', 'react native', 'android', 'ios',
+    'blockchain', 'solidity', 'web3',
+    'data structures', 'algorithms', 'oop', 'design patterns', 'solid',
+    'system design', 'software architecture', 'api development', 'backend', 'frontend', 'full stack',
+    'datadog', 'grafana', 'prometheus', 'new relic', 'splunk', 'sentry',
+    'vercel', 'netlify', 'heroku', 'cloudflare',
+    'github actions', 'circleci', 'travis ci',
   ]);
 
   const missingSkills: string[] = [];
