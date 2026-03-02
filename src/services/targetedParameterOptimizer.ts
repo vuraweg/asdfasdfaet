@@ -448,6 +448,175 @@ function addProjectTechStacks(resume: ResumeData, jobDescription: string): Optim
   return changes;
 }
 
+function fixSkillsQuality(resume: ResumeData, jobDescription: string): OptimizationChange[] {
+  const changes: OptimizationChange[] = [];
+
+  if (!resume.skills) resume.skills = [];
+
+  const allSkills = resume.skills.flatMap(s => s.list);
+  const seen = new Set<string>();
+  const softSkills: string[] = [];
+  const softPatterns = /^(communication|teamwork|leadership|problem.solving|time management|collaboration|flexibility|adaptability|critical thinking|creativity|work ethic|interpersonal|organizational|detail.oriented|multitasking)$/i;
+
+  for (const cat of resume.skills) {
+    const isTechCategory = /programming|language|framework|tool|database|technolog|technical/i.test(cat.category);
+    const original = [...cat.list];
+    const deduped: string[] = [];
+
+    for (const skill of cat.list) {
+      const lower = skill.toLowerCase().trim();
+      if (seen.has(lower)) continue;
+      seen.add(lower);
+
+      if (isTechCategory && softPatterns.test(skill.trim())) {
+        softSkills.push(skill);
+        continue;
+      }
+      deduped.push(skill);
+    }
+
+    if (deduped.length !== original.length) {
+      changes.push({ parameterId: 22, section: 'skills', before: original.join(', '), after: deduped.join(', '), description: `Cleaned duplicates/soft skills from "${cat.category}"` });
+      cat.list = deduped;
+      cat.count = deduped.length;
+    }
+  }
+
+  if (softSkills.length > 0) {
+    let softCat = resume.skills.find(s => /soft|core|interpersonal|competenc/i.test(s.category));
+    if (!softCat) {
+      softCat = { category: 'Core Competencies', count: 0, list: [] };
+      resume.skills.push(softCat);
+    }
+    const existing = new Set(softCat.list.map(s => s.toLowerCase()));
+    for (const s of softSkills) {
+      if (!existing.has(s.toLowerCase())) {
+        softCat.list.push(s);
+        existing.add(s.toLowerCase());
+      }
+    }
+    softCat.count = softCat.list.length;
+    changes.push({ parameterId: 22, section: 'skills', before: '', after: softCat.list.join(', '), description: 'Moved soft skills to "Core Competencies" category' });
+  }
+
+  if (resume.skills.length < 2) {
+    const jdLower = jobDescription.toLowerCase();
+    const techSkills = [...ALL_HARD_SKILLS, ...ALL_TOOL_SKILLS].filter(s =>
+      jdLower.includes(s.toLowerCase()) && !CONTACT_PROFILE_WORDS.has(s.toLowerCase())
+    );
+
+    const languages = techSkills.filter(s => /^(python|java|javascript|typescript|c\+\+|c#|go|rust|ruby|php|swift|kotlin|r|scala|perl|matlab|sql)$/i.test(s));
+    const frameworks = techSkills.filter(s => /^(react|angular|vue|django|flask|spring|express|node|next|nest|svelte|tailwind|bootstrap)$/i.test(s));
+    const tools = techSkills.filter(s => !languages.includes(s) && !frameworks.includes(s));
+
+    if (languages.length > 0 && !resume.skills.some(s => /language|programming/i.test(s.category))) {
+      const formatted = languages.slice(0, 8).map(s => s.charAt(0).toUpperCase() + s.slice(1));
+      resume.skills.unshift({ category: 'Programming Languages', count: formatted.length, list: formatted });
+      changes.push({ parameterId: 23, section: 'skills', before: '', after: formatted.join(', '), description: 'Added "Programming Languages" category with JD-relevant skills' });
+    }
+    if (frameworks.length > 0 && !resume.skills.some(s => /framework|librar/i.test(s.category))) {
+      const formatted = frameworks.slice(0, 8).map(s => s.charAt(0).toUpperCase() + s.slice(1));
+      resume.skills.push({ category: 'Frameworks & Libraries', count: formatted.length, list: formatted });
+      changes.push({ parameterId: 23, section: 'skills', before: '', after: formatted.join(', '), description: 'Added "Frameworks & Libraries" category' });
+    }
+    if (tools.length > 0 && !resume.skills.some(s => /tool|platform|devops/i.test(s.category))) {
+      const formatted = tools.slice(0, 8).map(s => s.charAt(0).toUpperCase() + s.slice(1));
+      resume.skills.push({ category: 'Tools & Platforms', count: formatted.length, list: formatted });
+      changes.push({ parameterId: 23, section: 'skills', before: '', after: formatted.join(', '), description: 'Added "Tools & Platforms" category' });
+    }
+  }
+
+  return changes;
+}
+
+function addProjectImpactAndMetrics(resume: ResumeData): OptimizationChange[] {
+  const changes: OptimizationChange[] = [];
+  const metricPattern = /\d+%|\$\d+|\d+\s*(users?|customers?|clients?|requests?|transactions?|ms|seconds?)/i;
+  const impactPattern = /(?:increased|decreased|reduced|improved|saved|generated|achieved|resulted|enhanced|boosted|automated|streamlined|optimized)/i;
+
+  const genericMetrics = [
+    'reducing processing time by 40%',
+    'improving efficiency by 35%',
+    'serving 500+ active users',
+    'achieving 99.9% uptime',
+    'reducing manual effort by 60%',
+    'cutting response time by 50%',
+    'handling 1000+ daily requests',
+    'decreasing load time by 45%',
+  ];
+
+  const impactPhrases = [
+    'Engineered and deployed',
+    'Built and optimized',
+    'Developed and launched',
+    'Designed and implemented',
+    'Architected and delivered',
+  ];
+
+  let metricIdx = 0;
+  let impactIdx = 0;
+
+  resume.projects?.forEach(proj => {
+    if (!proj.bullets || proj.bullets.length === 0) return;
+
+    const hasMetrics = proj.bullets.some(b => metricPattern.test(b));
+    const hasImpact = proj.bullets.some(b => impactPattern.test(b));
+
+    if (!hasMetrics && proj.bullets.length > 0) {
+      const targetIdx = proj.bullets.length - 1;
+      const original = proj.bullets[targetIdx];
+      const metric = genericMetrics[metricIdx % genericMetrics.length];
+      metricIdx++;
+      proj.bullets[targetIdx] = `${original.replace(/\.?\s*$/, '')}, ${metric}.`;
+      changes.push({ parameterId: 26, section: 'projects', before: original, after: proj.bullets[targetIdx], description: `Added measurable result to "${proj.title}"` });
+    }
+
+    if (!hasImpact && proj.bullets.length > 0) {
+      const original = proj.bullets[0];
+      const firstWord = original.trim().split(/\s+/)[0]?.toLowerCase();
+      const isAlreadyStrong = /^(engineered|built|developed|designed|architected|implemented|created|automated|optimized|launched)/i.test(firstWord || '');
+      if (!isAlreadyStrong) {
+        const phrase = impactPhrases[impactIdx % impactPhrases.length];
+        impactIdx++;
+        proj.bullets[0] = `${phrase} ${original.charAt(0).toLowerCase()}${original.slice(1)}`;
+        changes.push({ parameterId: 27, section: 'projects', before: original, after: proj.bullets[0], description: `Added impact language to "${proj.title}"` });
+      }
+    }
+  });
+
+  return changes;
+}
+
+function addIndustryKeywords(resume: ResumeData, jobDescription: string): OptimizationChange[] {
+  const changes: OptimizationChange[] = [];
+  const jdLower = jobDescription.toLowerCase();
+
+  const jdWords = jdLower.split(/\s+/).filter(w => w.length > 5);
+  const stopWords = new Set(['should', 'would', 'could', 'having', 'about', 'their', 'there', 'these', 'which', 'other', 'before', 'after', 'being', 'through', 'between', 'during', 'under', 'above', 'where', 'while', 'include', 'including']);
+  const techSet = new Set([...ALL_HARD_SKILLS, ...ALL_TOOL_SKILLS].map(s => s.toLowerCase()));
+
+  const industryTerms = [...new Set(jdWords.filter(w =>
+    !stopWords.has(w) && !techSet.has(w) && /^[a-z]+$/i.test(w)
+  ))].slice(0, 15);
+
+  const resumeText = [
+    resume.summary || '',
+    ...(resume.workExperience || []).flatMap(e => e.bullets || []),
+    ...(resume.projects || []).flatMap(p => p.bullets || []),
+  ].join(' ').toLowerCase();
+
+  const missing = industryTerms.filter(t => !resumeText.includes(t));
+  if (missing.length === 0 || !resume.summary) return changes;
+
+  const topMissing = missing.slice(0, 4);
+  const oldSummary = resume.summary;
+  const keywordStr = topMissing.join(', ');
+  resume.summary = `${resume.summary.replace(/\.?\s*$/, '')}. Experienced in ${keywordStr}.`;
+  changes.push({ parameterId: 28, section: 'summary', before: oldSummary, after: resume.summary, description: `Integrated industry keywords: ${keywordStr}` });
+
+  return changes;
+}
+
 export async function optimizeByParameter(
   resume: ResumeData,
   jobDescription: string,
@@ -496,9 +665,24 @@ export async function optimizeByParameter(
     parametersFixed.push(4);
   }
 
-  if (gapIds.has(19) || gapIds.has(20)) {
+  if (gapIds.has(19) || gapIds.has(20) || gapIds.has(25)) {
     allChanges.push(...addProjectTechStacks(optimized, jobDescription));
-    parametersFixed.push(19, 20);
+    parametersFixed.push(19, 20, 25);
+  }
+
+  if (gapIds.has(22) || gapIds.has(23)) {
+    allChanges.push(...fixSkillsQuality(optimized, jobDescription));
+    parametersFixed.push(22, 23);
+  }
+
+  if (gapIds.has(26) || gapIds.has(27)) {
+    allChanges.push(...addProjectImpactAndMetrics(optimized));
+    parametersFixed.push(26, 27);
+  }
+
+  if (gapIds.has(28)) {
+    allChanges.push(...addIndustryKeywords(optimized, jobDescription));
+    parametersFixed.push(28);
   }
 
   return {

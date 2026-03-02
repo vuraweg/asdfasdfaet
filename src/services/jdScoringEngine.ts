@@ -604,6 +604,182 @@ function scoreP21OnlinePresence(resume: ResumeData): ParameterScore {
   return { id: 21, name: 'Online Presence & Contact', category: 'Profile Completeness', score, maxScore, percentage: pct, suggestions, fixable: true, fixType: 'user_input' };
 }
 
+function scoreP22SkillsCategorization(resume: ResumeData): ParameterScore {
+  const maxScore = 10;
+  const suggestions: string[] = [];
+  const skills = resume.skills || [];
+  let score = 0;
+
+  const hasCategorized = skills.length >= 2;
+  if (hasCategorized) score += 4;
+  else suggestions.push('Organize skills into categories (e.g., Programming Languages, Frameworks, Tools, Databases)');
+
+  const allSkills = skills.flatMap(s => s.list).map(s => s.toLowerCase());
+  const duplicates = allSkills.filter((s, i) => allSkills.indexOf(s) !== i);
+  if (duplicates.length === 0) score += 3;
+  else suggestions.push(`Remove duplicate skills: ${[...new Set(duplicates)].slice(0, 3).join(', ')}`);
+
+  const softInTech = skills.some(s => {
+    const cat = s.category.toLowerCase();
+    const isTechCategory = /programming|language|framework|tool|database|technolog/i.test(cat);
+    if (!isTechCategory) return false;
+    return s.list.some(skill => /^(communication|teamwork|leadership|problem.solving|time management|collaboration|flexibility|adaptability)$/i.test(skill.trim()));
+  });
+  if (!softInTech) score += 3;
+  else suggestions.push('Move soft skills (communication, teamwork) out of technical skill categories');
+
+  const pct = Math.round((score / maxScore) * 100);
+  return { id: 22, name: 'Skills Categorization Quality', category: 'Skills Quality', score, maxScore, percentage: pct, suggestions, fixable: true, fixType: 'ai' };
+}
+
+function scoreP23SkillRelevance(resume: ResumeData, jdAnalysis: JDAnalysis): ParameterScore {
+  const maxScore = 10;
+  const suggestions: string[] = [];
+  const allSkills = (resume.skills || []).flatMap(s => s.list);
+
+  if (allSkills.length === 0) {
+    suggestions.push('Add a skills section with relevant technical skills');
+    return { id: 23, name: 'Skill Relevance to JD', category: 'Skills Quality', score: 0, maxScore, percentage: 0, suggestions, fixable: true, fixType: 'ai' };
+  }
+
+  const jdSkills = [...jdAnalysis.hardSkills, ...jdAnalysis.tools];
+  if (jdSkills.length === 0) {
+    return { id: 23, name: 'Skill Relevance to JD', category: 'Skills Quality', score: maxScore, maxScore, percentage: 100, suggestions, fixable: false, fixType: 'none' };
+  }
+
+  const relevant = allSkills.filter(s => jdSkills.some(j => s.toLowerCase().includes(j.toLowerCase()) || j.toLowerCase().includes(s.toLowerCase())));
+  const relevancePct = relevant.length / allSkills.length;
+  const score = Math.round(relevancePct * maxScore);
+
+  if (relevancePct < 0.4) suggestions.push('Remove skills not relevant to this role and add JD-matching skills');
+
+  const pct = Math.round(relevancePct * 100);
+  return { id: 23, name: 'Skill Relevance to JD', category: 'Skills Quality', score, maxScore, percentage: pct, suggestions, fixable: true, fixType: 'ai' };
+}
+
+function scoreP24ProjectCount(resume: ResumeData): ParameterScore {
+  const maxScore = 10;
+  const suggestions: string[] = [];
+  const projects = resume.projects || [];
+  let score = 0;
+
+  if (projects.length >= 2 && projects.length <= 5) score = 10;
+  else if (projects.length === 1) { score = 5; suggestions.push('Add at least one more relevant project'); }
+  else if (projects.length === 0) { score = 0; suggestions.push('Add 2-4 strong projects with measurable results'); }
+  else { score = 7; suggestions.push('Consider trimming to your 4-5 strongest projects'); }
+
+  const pct = Math.round((score / maxScore) * 100);
+  return { id: 24, name: 'Project Count', category: 'Project Quality', score, maxScore, percentage: pct, suggestions, fixable: false, fixType: 'user_input' };
+}
+
+function scoreP25ProjectTools(resume: ResumeData): ParameterScore {
+  const maxScore = 10;
+  const suggestions: string[] = [];
+  const projects = resume.projects || [];
+
+  if (projects.length === 0) {
+    return { id: 25, name: 'Project Tools Mentioned', category: 'Project Quality', score: 0, maxScore, percentage: 0, suggestions: ['Add projects with specific technologies listed'], fixable: false, fixType: 'user_input' };
+  }
+
+  let withTools = 0;
+  for (const proj of projects) {
+    const allText = `${proj.title} ${proj.description || ''} ${(proj.bullets || []).join(' ')}`.toLowerCase();
+    const hasTech = (proj.techStack && proj.techStack.length > 0) ||
+      /(?:react|python|java|node|express|django|flask|mongodb|sql|aws|docker|kubernetes|tensorflow|pytorch|typescript|javascript|angular|vue|spring|go|rust|ruby|php|swift|kotlin)/i.test(allText);
+    if (hasTech) withTools++;
+  }
+
+  const ratio = withTools / projects.length;
+  const score = Math.round(ratio * maxScore);
+  if (ratio < 0.5) suggestions.push('List specific technologies used in each project');
+
+  const pct = Math.round(ratio * 100);
+  return { id: 25, name: 'Project Tools Mentioned', category: 'Project Quality', score, maxScore, percentage: pct, suggestions, fixable: true, fixType: 'ai' };
+}
+
+function scoreP26ProjectMetrics(resume: ResumeData): ParameterScore {
+  const maxScore = 10;
+  const suggestions: string[] = [];
+  const projects = resume.projects || [];
+
+  if (projects.length === 0) {
+    return { id: 26, name: 'Project Measurable Results', category: 'Project Quality', score: 0, maxScore, percentage: 0, suggestions: ['Add projects with quantifiable results'], fixable: false, fixType: 'user_input' };
+  }
+
+  let withMetrics = 0;
+  for (const proj of projects) {
+    const allText = `${proj.title} ${proj.description || ''} ${(proj.bullets || []).join(' ')}`;
+    if (/\d+%|\d+x|\$\d+|\d+\s*(?:users?|customers?|requests?|transactions?|ms|seconds?|hours?|days?|records?|members?|projects?|clients?)/i.test(allText)) {
+      withMetrics++;
+    }
+  }
+
+  const ratio = withMetrics / projects.length;
+  const score = Math.round(ratio * maxScore);
+  if (ratio < 0.5) suggestions.push('Add quantifiable results to projects (e.g., "reduced load time by 40%", "served 1000+ users")');
+
+  const pct = Math.round(ratio * 100);
+  return { id: 26, name: 'Project Measurable Results', category: 'Project Quality', score, maxScore, percentage: pct, suggestions, fixable: true, fixType: 'ai' };
+}
+
+function scoreP27ProjectImpact(resume: ResumeData): ParameterScore {
+  const maxScore = 10;
+  const suggestions: string[] = [];
+  const projects = resume.projects || [];
+
+  if (projects.length === 0) {
+    return { id: 27, name: 'Project Business Impact', category: 'Project Quality', score: 0, maxScore, percentage: 0, suggestions: ['Add projects demonstrating business impact'], fixable: false, fixType: 'user_input' };
+  }
+
+  let withImpact = 0;
+  for (const proj of projects) {
+    const allText = `${proj.title} ${proj.description || ''} ${(proj.bullets || []).join(' ')}`.toLowerCase();
+    if (/(?:increased|decreased|reduced|improved|saved|generated|achieved|resulted|enhanced|boosted|automated|streamlined|optimized|solved|built|developed|implemented)/i.test(allText)) {
+      withImpact++;
+    }
+  }
+
+  const ratio = withImpact / projects.length;
+  const score = Math.round(ratio * maxScore);
+  if (ratio < 0.5) suggestions.push('Describe the real-world impact of each project (users served, time saved, problems solved)');
+
+  const pct = Math.round(ratio * 100);
+  return { id: 27, name: 'Project Business Impact', category: 'Project Quality', score, maxScore, percentage: pct, suggestions, fixable: true, fixType: 'ai' };
+}
+
+function scoreP28IndustryKeywords(resume: ResumeData, jdAnalysis: JDAnalysis): ParameterScore {
+  const maxScore = 10;
+  const suggestions: string[] = [];
+
+  const resumeText = [
+    resume.summary || '',
+    ...(resume.workExperience || []).flatMap(e => [e.role, e.company, ...e.bullets]),
+    ...(resume.projects || []).flatMap(p => [p.title, p.description || '', ...p.bullets]),
+    ...(resume.skills || []).flatMap(s => s.list),
+  ].join(' ').toLowerCase();
+
+  const industryTerms = jdAnalysis.responsibilities.flatMap(r => {
+    const words = r.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+    return words.filter(w => !TECH_SKILLS.has(w) && !/^(?:the|and|for|with|from|that|this|will|have|your|about|more|what|when|been|also|into|some|than|them|they|each|make|like|over|such|take|only|come|made|after|first|their|could|other|which|would)$/.test(w));
+  });
+
+  const uniqueTerms = [...new Set(industryTerms)].slice(0, 20);
+  if (uniqueTerms.length === 0) {
+    return { id: 28, name: 'Industry Keyword Coverage', category: 'Keyword Alignment', score: maxScore, maxScore, percentage: 100, suggestions, fixable: false, fixType: 'none' };
+  }
+
+  const matched = uniqueTerms.filter(t => resumeText.includes(t));
+  const ratio = matched.length / uniqueTerms.length;
+  const score = Math.round(ratio * maxScore);
+  if (ratio < 0.3) {
+    const missing = uniqueTerms.filter(t => !resumeText.includes(t)).slice(0, 5);
+    suggestions.push(`Add industry-relevant keywords: ${missing.join(', ')}`);
+  }
+
+  const pct = Math.round(ratio * 100);
+  return { id: 28, name: 'Industry Keyword Coverage', category: 'Keyword Alignment', score, maxScore, percentage: pct, suggestions, fixable: true, fixType: 'ai' };
+}
+
 function getMatchBand(score: number): string {
   if (score >= 90) return 'Excellent Match';
   if (score >= 80) return 'Very Good Match';
@@ -629,12 +805,14 @@ function getInterviewProbability(score: number): string {
 }
 
 const CATEGORY_WEIGHTS: Record<string, number> = {
-  'ATS Compatibility': 15,
-  'Keyword Alignment': 30,
-  'Impact & Metrics': 18,
-  'Verb Strength & Diversity': 12,
-  'Experience Alignment': 10,
-  'Project Relevance': 10,
+  'ATS Compatibility': 12,
+  'Keyword Alignment': 25,
+  'Impact & Metrics': 15,
+  'Verb Strength & Diversity': 8,
+  'Experience Alignment': 8,
+  'Project Relevance': 5,
+  'Skills Quality': 10,
+  'Project Quality': 12,
   'Profile Completeness': 5,
 };
 
@@ -663,6 +841,13 @@ export function scoreResumeAgainstJD(resume: ResumeData, jobDescription: string)
     scoreP19ProjectSkillAlignment(resume, jd),
     scoreP20TechStackRelevance(resume, jd),
     scoreP21OnlinePresence(resume),
+    scoreP22SkillsCategorization(resume),
+    scoreP23SkillRelevance(resume, jd),
+    scoreP24ProjectCount(resume),
+    scoreP25ProjectTools(resume),
+    scoreP26ProjectMetrics(resume),
+    scoreP27ProjectImpact(resume),
+    scoreP28IndustryKeywords(resume, jd),
   ];
 
   const categoryNames = Object.keys(CATEGORY_WEIGHTS);
