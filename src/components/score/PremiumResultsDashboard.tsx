@@ -115,8 +115,8 @@ export const PremiumResultsDashboard: React.FC<PremiumResultsDashboardProps> = (
       >
         <Info className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
         <p className="text-slate-400 leading-relaxed text-xs">
-          This is your <span className="text-slate-200 font-medium">original resume score</span> against the job description.
-          The JD Optimizer shows a higher &ldquo;After Optimization&rdquo; score because it rewrites your resume with matched keywords.
+          This score uses the <span className="text-slate-200 font-medium">same 20-parameter scoring engine</span> as the JD Optimizer.
+          Your &ldquo;Before&rdquo; score in the JD Optimizer will match this score.
           Use the Score Checker to understand gaps, and the JD Optimizer to fix them.
         </p>
       </div>

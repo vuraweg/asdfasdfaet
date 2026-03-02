@@ -5,6 +5,7 @@ import {
   SOFT_SKILLS,
   CONTACT_PROFILE_WORDS,
 } from '../constants/skillsTaxonomy';
+import { scoreResumeAgainstJD } from './jdScoringEngine';
 
 export interface CategoryScore {
   id: string;
@@ -1578,10 +1579,31 @@ export function runPremiumScoreEngine(
 
   const quickWins = buildQuickWins(categories, redFlags);
 
-  const overallScore = Math.round(
-    categories.reduce((sum, c) => sum + (c.percentage * c.weight / 100), 0)
-  );
-  const projectedScore = calculateProjectedScore(categories, quickWins);
+  const fallbackResumeData: ResumeData = resumeData || {
+    name: '',
+    phone: '',
+    email: '',
+    linkedin: '',
+    github: '',
+    education: [],
+    workExperience: [],
+    projects: [],
+    skills: [],
+    certifications: [],
+  };
+
+  let overallScore: number;
+  try {
+    const jdResult = scoreResumeAgainstJD(fallbackResumeData, jobDescription);
+    overallScore = jdResult.overallScore;
+  } catch {
+    overallScore = Math.round(
+      categories.reduce((sum, c) => sum + (c.percentage * c.weight / 100), 0)
+    );
+  }
+
+  const quickWinBoost = quickWins.reduce((sum, w) => sum + w.impact, 0);
+  const projectedScore = Math.min(100, Math.round(overallScore + quickWinBoost * 0.5));
 
   return {
     overallScore,
