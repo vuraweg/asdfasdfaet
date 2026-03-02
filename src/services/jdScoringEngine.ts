@@ -574,6 +574,36 @@ function scoreP20TechStackRelevance(resume: ResumeData, jdAnalysis: JDAnalysis):
   return { id: 20, name: 'Tech Stack Relevance', category: 'Project Relevance', score, maxScore, percentage: Math.round(pct * 100), suggestions, fixable: true, fixType: 'ai' };
 }
 
+function scoreP21OnlinePresence(resume: ResumeData): ParameterScore {
+  const maxScore = 10;
+  const suggestions: string[] = [];
+  let score = 0;
+
+  const hasLinkedIn = !!resume.linkedin && /linkedin\.com/i.test(resume.linkedin);
+  const hasGitHub = !!resume.github && /github\.com/i.test(resume.github);
+  const hasEmail = !!resume.email && resume.email.includes('@');
+  const hasPhone = !!resume.phone && resume.phone.trim().length >= 10;
+  const hasName = !!resume.name && resume.name.trim().length >= 2;
+
+  if (hasName) score += 2;
+  else suggestions.push('Add your full name to the resume header');
+
+  if (hasEmail) score += 2;
+  else suggestions.push('Add your email address');
+
+  if (hasPhone) score += 1;
+  else suggestions.push('Add your phone number');
+
+  if (hasLinkedIn) score += 3;
+  else suggestions.push('Add your LinkedIn profile URL (linkedin.com/in/yourname)');
+
+  if (hasGitHub) score += 2;
+  else suggestions.push('Add your GitHub profile URL (github.com/yourusername)');
+
+  const pct = Math.round((score / maxScore) * 100);
+  return { id: 21, name: 'Online Presence & Contact', category: 'Profile Completeness', score, maxScore, percentage: pct, suggestions, fixable: true, fixType: 'user_input' };
+}
+
 function getMatchBand(score: number): string {
   if (score >= 90) return 'Excellent Match';
   if (score >= 80) return 'Very Good Match';
@@ -600,11 +630,12 @@ function getInterviewProbability(score: number): string {
 
 const CATEGORY_WEIGHTS: Record<string, number> = {
   'ATS Compatibility': 15,
-  'Keyword Alignment': 35,
+  'Keyword Alignment': 30,
   'Impact & Metrics': 18,
   'Verb Strength & Diversity': 12,
   'Experience Alignment': 10,
   'Project Relevance': 10,
+  'Profile Completeness': 5,
 };
 
 export function scoreResumeAgainstJD(resume: ResumeData, jobDescription: string): JDScoringResult {
@@ -631,6 +662,7 @@ export function scoreResumeAgainstJD(resume: ResumeData, jobDescription: string)
     scoreP18SeniorityAlignment(resume, jd),
     scoreP19ProjectSkillAlignment(resume, jd),
     scoreP20TechStackRelevance(resume, jd),
+    scoreP21OnlinePresence(resume),
   ];
 
   const categoryNames = Object.keys(CATEGORY_WEIGHTS);

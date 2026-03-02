@@ -41,6 +41,7 @@ interface Education {
 }
 
 interface ContactDetails {
+  name: string;
   phone: string;
   email: string;
   linkedin: string;
@@ -101,6 +102,7 @@ export const MissingSectionsModal: React.FC<MissingSectionsModalProps> = ({
   });
   const [certifications, setCertifications] = useState<string[]>(['']);
   const [contactDetails, setContactDetails] = useState<ContactDetails>({
+    name: '',
     phone: '',
     email: '',
     linkedin: '',
@@ -354,18 +356,25 @@ export const MissingSectionsModal: React.FC<MissingSectionsModalProps> = ({
     }
 
     if (currentSection === 'contactDetails' || currentSection.startsWith('contactDetails:')) {
-      // For granular fields (contactDetails:Phone, contactDetails:Email), validate that specific field
       if (currentSection === 'contactDetails:Phone') {
         return contactDetails.phone.trim().length >= 10;
       }
       if (currentSection === 'contactDetails:Email') {
-        return contactDetails.email.trim().includes('@') && 
+        return contactDetails.email.trim().includes('@') &&
                contactDetails.email.trim().includes('.');
       }
-      // Full contact section - require email, phone optional
-      const emailValid = contactDetails.email.trim().includes('@') && 
+      if (currentSection === 'contactDetails:LinkedIn') {
+        return contactDetails.linkedin.trim().length > 0 && /linkedin\.com/i.test(contactDetails.linkedin);
+      }
+      if (currentSection === 'contactDetails:GitHub') {
+        return contactDetails.github.trim().length > 0 && /github\.com/i.test(contactDetails.github);
+      }
+      if (currentSection === 'contactDetails:Name') {
+        return contactDetails.name.trim().length >= 2;
+      }
+      const emailValid = contactDetails.email.trim().includes('@') &&
                         contactDetails.email.trim().includes('.');
-      const phoneValid = contactDetails.phone.trim() === '' || 
+      const phoneValid = contactDetails.phone.trim() === '' ||
                         contactDetails.phone.trim().length >= 10;
       return emailValid && phoneValid;
     }
@@ -381,14 +390,11 @@ export const MissingSectionsModal: React.FC<MissingSectionsModalProps> = ({
     }
   };
 
-  // Skip is ONLY allowed for certifications section (per pipeline requirements)
   const canSkipCurrentSection = (): boolean => {
-    // In pipeline mode, enforce strict rules: only certifications can be skipped
-    if (pipelineMode) {
-      return currentSection === 'certifications';
-    }
-    // In standalone mode, allow more flexibility
-    return currentSection === 'certifications';
+    if (currentSection === 'certifications') return true;
+    if (currentSection === 'contactDetails:LinkedIn') return true;
+    if (currentSection === 'contactDetails:GitHub') return true;
+    return false;
   };
 
   // Check if current section is required (cannot be skipped)
@@ -398,10 +404,9 @@ export const MissingSectionsModal: React.FC<MissingSectionsModalProps> = ({
     return requiredSections.includes(baseSection);
   };
 
-  const handleSkipCertifications = () => {
-    // Only certifications can be skipped - move to next step or submit
-    if (currentSection !== 'certifications') return;
-    
+  const handleSkipSection = () => {
+    if (!canSkipCurrentSection()) return;
+
     if (currentStep < missingSections.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -459,9 +464,9 @@ export const MissingSectionsModal: React.FC<MissingSectionsModalProps> = ({
       data.certifications = certifications.filter(c => c.trim());
     }
 
-    // Handle both full contact section and granular contact fields
     if (missingSections.includes('contactDetails') || missingSections.some(s => s.startsWith('contactDetails:'))) {
       data.contactDetails = {
+        name: contactDetails.name.trim(),
         phone: contactDetails.phone.trim(),
         email: contactDetails.email.trim(),
         linkedin: contactDetails.linkedin.trim(),
@@ -1041,69 +1046,113 @@ export const MissingSectionsModal: React.FC<MissingSectionsModalProps> = ({
     </div>
   );
 
-  const renderContactDetailsForm = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="text-center mb-6">
-        <div className="bg-yellow-100 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-          <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600" />
+  const renderContactDetailsForm = () => {
+    const isNameOnly = currentSection === 'contactDetails:Name';
+    const isLinkedInOnly = currentSection === 'contactDetails:LinkedIn';
+    const isGitHubOnly = currentSection === 'contactDetails:GitHub';
+    const isPhoneOnly = currentSection === 'contactDetails:Phone';
+    const isEmailOnly = currentSection === 'contactDetails:Email';
+    const showAll = currentSection === 'contactDetails';
+
+    const title = isNameOnly ? 'Add Your Name'
+      : isLinkedInOnly ? 'Add LinkedIn Profile'
+      : isGitHubOnly ? 'Add GitHub Profile'
+      : isPhoneOnly ? 'Add Phone Number'
+      : isEmailOnly ? 'Add Email Address'
+      : 'Add Contact Details';
+
+    const description = isLinkedInOnly ? 'Recruiters expect a LinkedIn profile on every resume. Adding it improves your online presence score.'
+      : isGitHubOnly ? 'For tech roles, a GitHub link shows your code quality and project work.'
+      : isNameOnly ? 'Your full name is required at the top of your resume.'
+      : 'Please provide your contact information';
+
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div className="text-center mb-6">
+          <div className="bg-yellow-100 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600" />
+          </div>
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{title}</h3>
+          <p className="text-sm sm:text-base text-gray-600">{description}</p>
         </div>
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Add Contact Details</h3>
-        <p className="text-sm sm:text-base text-gray-600">Please provide your contact information</p>
-      </div>
 
-      <div>
-        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Email Address *
-        </label>
-        <input
-          type="email"
-          value={contactDetails.email}
-          onChange={(e) => updateContactDetails('email', e.target.value)}
-          placeholder="e.g., your.email@example.com"
-          className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
-        />
-      </div>
+        {(showAll || isNameOnly) && (
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Full Name *
+            </label>
+            <input
+              type="text"
+              value={contactDetails.name}
+              onChange={(e) => updateContactDetails('name', e.target.value)}
+              placeholder="e.g., John Doe"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
+            />
+          </div>
+        )}
 
-      <div>
-        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Phone Number
-        </label>
-        <input
-          type="tel"
-          value={contactDetails.phone}
-          onChange={(e) => updateContactDetails('phone', e.target.value)}
-          placeholder="e.g., +1 (555) 123-4567"
-          className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
-        />
-      </div>
+        {(showAll || isEmailOnly) && (
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              value={contactDetails.email}
+              onChange={(e) => updateContactDetails('email', e.target.value)}
+              placeholder="e.g., your.email@example.com"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
+            />
+          </div>
+        )}
 
-      <div>
-        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          LinkedIn Profile URL
-        </label>
-        <input
-          type="url"
-          value={contactDetails.linkedin}
-          onChange={(e) => updateContactDetails('linkedin', e.target.value)}
-          placeholder="e.g., https://linkedin.com/in/yourprofile"
-          className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
-        />
-      </div>
+        {(showAll || isPhoneOnly) && (
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={contactDetails.phone}
+              onChange={(e) => updateContactDetails('phone', e.target.value)}
+              placeholder="e.g., +1 (555) 123-4567"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
+            />
+          </div>
+        )}
 
-      <div>
-        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          GitHub Profile URL
-        </label>
-        <input
-          type="url"
-          value={contactDetails.github}
-          onChange={(e) => updateContactDetails('github', e.target.value)}
-          placeholder="e.g., https://github.com/yourusername"
-          className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
-        />
+        {(showAll || isLinkedInOnly) && (
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              LinkedIn Profile URL *
+            </label>
+            <input
+              type="url"
+              value={contactDetails.linkedin}
+              onChange={(e) => updateContactDetails('linkedin', e.target.value)}
+              placeholder="e.g., https://linkedin.com/in/yourprofile"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
+            />
+          </div>
+        )}
+
+        {(showAll || isGitHubOnly) && (
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              GitHub Profile URL *
+            </label>
+            <input
+              type="url"
+              value={contactDetails.github}
+              onChange={(e) => updateContactDetails('github', e.target.value)}
+              placeholder="e.g., https://github.com/yourusername"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:border-yellow-500 dark:bg-dark-200 dark:text-gray-100 dark:placeholder-gray-400 text-sm min-h-[44px]"
+            />
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const getSectionIcon = (section: string) => {
     // Handle granular field names - use base section icon
@@ -1296,12 +1345,11 @@ export const MissingSectionsModal: React.FC<MissingSectionsModalProps> = ({
             </div>
 
             <div className="flex gap-2">
-              {/* Skip button - ONLY for certifications */}
               {canSkipCurrentSection() && (
                 <button
-                  onClick={handleSkipCertifications}
+                  onClick={handleSkipSection}
                   className="px-4 py-3 border border-amber-500/50 rounded-lg text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 transition-colors text-sm min-h-[44px] flex justify-center items-center"
-                  title="Certifications are optional and can be skipped"
+                  title="This field is optional and can be skipped"
                 >
                   <span className="hidden sm:inline">Skip Optional</span>
                   <span className="sm:hidden">Skip</span>

@@ -464,13 +464,34 @@ const checkForMissingSections = useCallback((resumeData: ResumeData): string[] =
                   resumeData.email.includes('@') && 
                   resumeData.email.includes('.');
   
-  // Add specific missing contact fields instead of generic "contactDetails"
+  const nameOk = typeof resumeData.name === 'string' &&
+                  resumeData.name.trim().length >= 2 &&
+                  !isPlaceholderContent(resumeData.name);
+
+  const linkedinOk = typeof resumeData.linkedin === 'string' &&
+                     resumeData.linkedin.trim().length > 0 &&
+                     /linkedin\.com/i.test(resumeData.linkedin);
+
+  const githubOk = typeof resumeData.github === 'string' &&
+                   resumeData.github.trim().length > 0 &&
+                   /github\.com/i.test(resumeData.github);
+
   if (!phoneOk && !emailOk) {
-    missing.push('contactDetails'); // Both missing - ask for full contact section
+    missing.push('contactDetails');
   } else if (!phoneOk) {
     missing.push('contactDetails:Phone');
   } else if (!emailOk) {
     missing.push('contactDetails:Email');
+  }
+
+  if (!nameOk) {
+    missing.push('contactDetails:Name');
+  }
+  if (!linkedinOk) {
+    missing.push('contactDetails:LinkedIn');
+  }
+  if (!githubOk) {
+    missing.push('contactDetails:GitHub');
   }
 
   return missing;
@@ -718,6 +739,7 @@ const checkForMissingSections = useCallback((resumeData: ResumeData): string[] =
         ...(data.certifications && data.certifications.length > 0 && { certifications: data.certifications }),
         ...(data.summary && { summary: data.summary }),
         ...(data.contactDetails && {
+          name: data.contactDetails.name || pendingResumeData.name,
           phone: data.contactDetails.phone || pendingResumeData.phone,
           email: data.contactDetails.email || pendingResumeData.email,
           linkedin: data.contactDetails.linkedin || pendingResumeData.linkedin,
